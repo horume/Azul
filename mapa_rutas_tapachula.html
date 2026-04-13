@@ -1,52 +1,70 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Rutas Tapachula</title>
+    <title>Interactive Map of Tapachula Routes</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css" />
     <style>
-        #map { height: 600px; }
-        /* Responsive design styling */
-        @media (max-width: 768px) {
-            #map { height: 400px; }
+        /* Styles matching Tuxtla design */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .map {
+            height: 500px;
+        }
+        .search-container {
+            margin: 20px;
+        }
+        #route-info {
+            margin: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
-    <h1>Mapas de Rutas en Tapachula, Chiapas</h1>
-    <div id="map"></div>
+    <div class="search-container">
+        <input type="text" id="route-search" placeholder="Search by route number..." />
+    </div>
+    <div id="route-info"></div>
+    <div id="map" class="map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Initialize the map
-        var map = L.map('map').setView([14.8922, -92.2632], 13);
+        var map = L.map('map').setView([14.8333, -92.4167], 13); // Centered on Tapachula
 
-        // Load and display tile layers on the map
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Sample routes with different colored polylines
-        var route1 = [
-            [14.8922, -92.2632], // Start point
-            [14.8972, -92.2465]  // End point
+        const routes = [
+            { number: 'ruta_01tapd', lat: 14.827, lng: -92.416, details: 'Details about ruta_01tapd' },
+            { number: 'ruta_02tapd', lat: 14.828, lng: -92.417, details: 'Details about ruta_02tapd' },
+            // Add additional routes up to ruta_017tapreg
+            { number: 'ruta_017tapreg', lat: 14.829, lng: -92.418, details: 'Details about ruta_017tapreg' },
         ];
 
-        var route2 = [
-            [14.8950, -92.2611], // Start point
-            [14.8850, -92.2553]  // End point
-        ];
+        routes.forEach(route => {
+            var marker = L.marker([route.lat, route.lng]).addTo(map);
+            marker.bindPopup(route.details);
 
-        // Add polylines for routes
-        L.polyline(route1, {color: 'blue'}).addTo(map).bindPopup('Ida - Ruta 1');
-        L.polyline(route2, {color: 'red'}).addTo(map).bindPopup('Vuelta - Ruta 2');
+            marker.on('click', function() {
+                document.getElementById('route-info').innerText = route.details;
+            });
+        });
 
-        // Add search functionality (example placeholder)
-        // Implement search here
-
-        // Add trip planner functionality (example placeholder)
-        // Implement trip planner here
+        document.getElementById('route-search').addEventListener('input', function(e) {
+            let searchValue = e.target.value.toLowerCase();
+            routes.forEach(route => {
+                if (route.number.toLowerCase().includes(searchValue)) {
+                    map.setView([route.lat, route.lng], 15);
+                }
+            });
+        });
     </script>
 </body>
 </html>
