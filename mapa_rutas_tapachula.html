@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Rutas Tapachula</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map { height: 600px; }
+        /* Responsive design styling */
+        @media (max-width: 768px) {
+            #map { height: 400px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Mapas de Rutas en Tapachula, Chiapas</h1>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        var map = L.map('map').setView([14.8922, -92.2632], 13);
+
+        // Load and display tile layers on the map
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Sample routes with different colored polylines
+        var route1 = [
+            [14.8922, -92.2632], // Start point
+            [14.8972, -92.2465]  // End point
+        ];
+
+        var route2 = [
+            [14.8950, -92.2611], // Start point
+            [14.8850, -92.2553]  // End point
+        ];
+
+        // Add polylines for routes
+        L.polyline(route1, {color: 'blue'}).addTo(map).bindPopup('Ida - Ruta 1');
+        L.polyline(route2, {color: 'red'}).addTo(map).bindPopup('Vuelta - Ruta 2');
+
+        // Add search functionality (example placeholder)
+        // Implement search here
+
+        // Add trip planner functionality (example placeholder)
+        // Implement trip planner here
+    </script>
+</body>
+</html>
