@@ -15,7 +15,11 @@
     body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--text)}
     header{position:sticky;top:0;z-index:100;background:linear-gradient(135deg,#0A2540,#133b66);color:#fff;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
     .header-wrap,.buscador,.meta,.grid,.empty{max-width:1100px;margin:0 auto}
-    h1{margin:0;font-size:1.5rem}.subtitle{margin:.3rem 0 0;opacity:.9}
+    .header-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    h1{margin:0;font-size:1.5rem}
+    .subtitle{margin:.3rem 0 0;opacity:.9}
+    .back-btn{display:inline-block;color:#fff;text-decoration:none;font-weight:700;background:rgba(255,255,255,.15);padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.25);white-space:nowrap}
+    .back-btn:hover{background:rgba(255,255,255,.25)}
     .buscador{padding:14px}
     .search-box{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
     input{width:100%;border:none;outline:none;font-size:16px;background:transparent;color:var(--text)}
@@ -40,7 +44,10 @@
 <body>
   <header>
     <div class="header-wrap">
-      <h1>Moviap</h1>
+      <div class="header-top">
+        <h1>Moviap</h1>
+        <a href="index.html" class="back-btn">← Regresar</a>
+      </div>
       <p class="subtitle">Encuentra cómo viajar fácil</p>
     </div>
   </header>
