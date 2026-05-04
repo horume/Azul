@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Moviap - Terminales</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Encuentra terminales foráneas, rutas, horarios y cómo llegar." />
+  <style>
+    :root{
+      --bg:#f3f6fb; --surface:#fff; --text:#1a2433; --muted:#5f6c80;
+      --primary:#0A2540; --accent:#00A86B; --border:#dfe6ef;
+      --shadow:0 8px 24px rgba(10,37,64,.08); --radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    header{position:sticky;top:0;z-index:100;background:linear-gradient(135deg,#0A2540,#133b66);color:#fff;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+    .header-wrap,.buscador,.meta,.grid,.empty{max-width:1100px;margin:0 auto}
+    h1{margin:0;font-size:1.5rem}.subtitle{margin:.3rem 0 0;opacity:.9}
+    .buscador{padding:14px}
+    .search-box{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+    input{width:100%;border:none;outline:none;font-size:16px;background:transparent;color:var(--text)}
+    .meta{padding:0 16px 10px;color:var(--muted);font-size:.92rem}
+    .grid{padding:0 14px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+    .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+    .card-header{padding:14px 14px 8px;border-bottom:1px solid #eef3f8}
+    .card h2{margin:0;font-size:1.08rem;color:#0e2a49}
+    .card-body{padding:12px 14px 14px}
+    .row{margin:0 0 8px;line-height:1.35;font-size:.95rem}
+    .label{font-weight:700;color:#22344d}
+    .tags{margin:8px 0 10px;display:flex;flex-wrap:wrap;gap:6px}
+    .tag{display:inline-block;background:#eef3f8;color:#324760;border:1px solid #dde7f2;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:600}
+    iframe{width:100%;height:180px;border:none;border-top:1px solid #eef3f8;border-bottom:1px solid #eef3f8}
+    .actions{padding:12px 14px 14px;margin-top:auto}
+    .btn{display:block;width:100%;background:var(--accent);color:#fff;text-align:center;padding:11px 12px;text-decoration:none;border-radius:10px;font-weight:700}
+    .hidden{display:none!important}
+    .empty{padding:0 16px 24px;color:var(--muted);display:none}
+    @media (max-width:640px){.grid{grid-template-columns:1fr}iframe{height:200px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-wrap">
+      <h1>Moviap</h1>
+      <p class="subtitle">Encuentra cómo viajar fácil</p>
+    </div>
+  </header>
+
+  <div class="buscador">
+    <div class="search-box">
+      <input id="busqueda" type="text" placeholder="Buscar destino, terminal, ruta o servicio..." oninput="filtrar()" />
+    </div>
+  </div>
+
+  <div class="meta"><span id="contador"></span></div>
+  <main class="grid" id="contenedorCards"></main>
+  <p class="empty" id="sinResultados">No encontramos terminales con esa búsqueda.</p>
+
+  <script>
+    const TERMINALES = [
+  {
+    nombre: "Autotransportes Cuxtepeques",
+    destino: "El Parral, Revolución, Diamante, Independencia, Benito Juárez, La Tigrilla, Ángel Albino Corzo (Jaltenango), Ámbar Agua Prieta, La Concordia",
+    ruta: "Tuxtla → varios destinos",
+    direccion: "Central Camionera del Sur, 10A. Sur Oriente s/n, Centro, Tuxtla Gutiérrez",
+    horario: "Por confirmar",
+    costo: "Por confirmar",
+    telefono: "9616042708",
+    telefonoNota: "(por verificar)",
+    servicios: ["Pasaje", "Paquetería"],
+    tags: ["📦 Paquetería", "🚌 Foráneo"],
+    lat: 16.74291530500461,
+    lng: -93.10598820854605
+  },
+  {
+    nombre: "Taxis Solidaridad",
+    destino: "Tonalá / Arriaga",
+    ruta: "Tuxtla → Tonalá / Arriaga",
+    direccion: "Calle 1a. Poniente Norte esq. 11a. Nte. Pte. 1194",
+    horario: "5:00 AM - 9:00 PM",
+    costo: "$250 - $300",
+    telefono: "9616046810",
+    servicios: ["Pasaje", "Paquetería"],
+    tags: ["⚡ Rápido", "📦 Paquetería"],
+    lat: 16.763762410013165,
+    lng: -93.11537809248198
+  },
+  {
+    nombre: "Ómnibus de Chiapas",
+    destino: "San Cristóbal",
+    ruta: "Tuxtla - San Cristóbal",
+    direccion: "Av. 4a. Sur Ote. 1565",
+    horario: "5:00 AM - 10:00 PM",
+    costo: "$80 - $120",
+    telefono: "9611289407",
+    servicios: ["Pasaje", "Paquetería", "Mascotas"],
+    tags: ["💸 Económico", "🐶 Mascotas"],
+    lat: 16.74848344979757,
+    lng: -93.10363146259898
+  },
+  {
+    nombre: "Terminal Tuxtla - Suchiapa",
+    destino: "Suchiapa",
+    ruta: "Tuxtla → Suchiapa",
+    direccion: "Calle 2a. Ote. Sur 1121, San Francisco, Tuxtla Gutiérrez",
+    horario: "6:00 AM - 9:00 PM",
+    costo: "$25 - $35",
+    telefono: "9611196949",
+    servicios: ["Pasaje", "Paquetería"],
+    tags: ["💸 Económico", "📦 Paquetería"],
+    lat: 16.745410143640946,
+    lng: -93.11603126642092
+  },
+  {
+    nombre: "Terminal Tuxtla - Comitán / Chiflón",
+    destino: "Comitán de Domínguez / Cascadas El Chiflón",
+    ruta: "Vía Angostura",
+    direccion: "13va Calle Oriente Sur, Tuxtla Gutiérrez",
+    horario: "Salidas continuas (por confirmar)",
+    costo: "$180 - $250",
+    telefono: "",
+    servicios: ["Pasaje", "Paquetería"],
+    tags: ["⚡ Rápido", "📦 Paquetería", "🏞 Turismo"],
+    lat: 16.742937919016015,
+    lng: -93.10611644991516
+  },
+  {
+    nombre: "Transportes Tuxtla - Venustiano Carranza",
+    destino: "Venustiano Carranza",
+    ruta: "Tuxtla → Venustiano Carranza",
+    direccion: "Calle 13a Ote Sur 985, Santa Cruz, Tuxtla Gutiérrez",
+    horario: "6:00 AM - 7:00 PM",
+    costo: "$120 - $180",
+    telefono: "9921177707",
+    servicios: ["Pasaje", "Paquetería"],
+    tags: ["💸 Económico", "📦 Paquetería"],
+    lat: 16.743117722592036,
+    lng: -93.10665129438769
+  },
+  {
+    nombre: "Rápidos de La Angostura",
+    destino: "La Angostura",
+    ruta: "Tuxtla → La Angostura",
+    direccion: "13 Ote. Sur s/n, Centro, Tuxtla Gutiérrez",
+    horario: "5:00 AM - 8:00 PM",
+    costo: "$40 - $70",
+    telefono: "9616146362",
+    servicios: ["Pasaje", "Paquetería"],
+    tags: ["⚡ Rápido", "💸 Económico", "📦 Paquetería"],
+    lat: 16.742959380343496,
+    lng: -93.10622822018404
+  },
+
+{
+    nombre: "Grupo San Cristóbal OTEZ",
+    destino: "San Cristóbal de las Casas",
+    ruta: "Tuxtla → San Cristóbal vía Autopista",
+    direccion: "13 Ote. Sur s/n, Centro, Tuxtla Gutiérrez",
+    horario: "5:00 AM - 9:00 PM",
+    costo: "$40 - $70",
+    telefono: "961----",
+    servicios: ["Pasaje", "Paquetería"],
+    tags: ["⚡ Rápido", "💸 Económico", "📦 Paquetería"],
+    lat: 16.742959380343496,
+    lng: -93.10622822018404
+  },
+{
+    nombre: "Corazón de María",
+    destino: "San Cristóbal de las Casas",
+    ruta: "Tuxtla → San Cristóbal vía Autopista",
+    direccion: "13 Ote. Sur s/n, Centro, Tuxtla Gutiérrez",
+    horario: "5:00 AM - 9:00 PM",
+    costo: "$40 - $70",
+    telefono: "9616001212",
+    servicios: ["Pasaje", "Paquetería"],
+    tags: ["⚡ Rápido", "💸 Económico", "📦 Paquetería"],
+    lat: 16.742959380343496,
+    lng: -93.10622822018404
+  },
+{
+    nombre: "Taxis Ejecutivos Tux-Cintalapa",
+    destino: "Cintalapa",
+    ruta: "Tuxtla → Cintalapa",
+    direccion: "Av. 10a Sur entre 2a y 3a Oriente, Terminal San Juan",
+    horario: "5:00 AM - 9:00 PM",
+    costo: "$250 - $300",
+    telefono: "9612799555",
+    servicios: ["Pasaje", "Paquetería", "Viajes especiales"],
+    tags: ["⚡ Rápido", "📦 Paquetería"],
+    lat: 16.74476278986647, 
+    lng: -93.11548291788095
+  },
+{
+    nombre: "Autotransportes AVISA",
+    destino: "Villaflores, Villa Corzo",
+    ruta: "Tuxtla → Villaflores → Villa Corzo",
+    direccion: "Calle Privada Tercera Ote. Sur 1160, San Francisco",
+    horario: "5:00 AM - 9:00 PM", 
+    costo: "$250 - $300",
+    telefono: "9616134635",
+    servicios: ["Pasaje", "Paquetería"],
+    tags: ["⚡ Rápido", "📦 Paquetería"],
+    lat: 16.74476278986647, 
+    lng: -93.11548291788095
+  },
+{
+    nombre: "Autobuses Aexa Oficial",
+    destino: "Cintalapa, Arriaga, Pijijiapan, Escuintla, Huixtla, Mapastepec, Tapachula, Tonalá",
+    ruta: "Tuxtla → Tapachula e intermedios",
+    direccion: "9a. Sur Oriente no. 2044",
+    horario: "5:00 AM - 11:30 PM", 
+    costo: "$187 - $553",
+    telefono: "9612338191",
+    servicios: ["Pasaje", "Paquetería", "WiFi"],
+    tags: ["⚡ Rápido", "📦 Paquetería"],
+    lat: 16.742311960303116,  
+    lng: -93.10127920099745
+  },
+{
+    nombre: "Autobuses Aexa Oficial",
+    destino: "Palenque",
+    ruta: "Tuxtla → Palenque",
+    direccion: "9a. Sur Oriente no. 2044",
+    horario: "5:00 AM - 11:30 PM", 
+    costo: "$407 - $519",
+    telefono: "9612338191",
+    servicios: ["Pasaje", "Paquetería", "WiFi"],
+    tags: ["⚡ Rápido", "📦 Paquetería"],
+    lat: 16.742311960303116,  
+    lng: -93.10127920099745
+  },
+{
+    nombre: "Las Pancheras AEXA",
+    destino: "Cintalapa",
+    ruta: "Tuxtla → Cintalapa",
+    direccion: "9a. Sur Oriente no. 2044",
+    horario: "5:00 AM - 11:30 PM", 
+    costo: "$80 - $200",
+    telefono: "9616385018",
+    servicios: ["Pasaje", "Paquetería"],
+    tags: ["⚡ Rápido", "📦 Paquetería"],
+    lat: 16.742311960303116,  
+    lng: -93.10127920099745
+  },
+{
+    nombre: "ADO",
+    destino: "Tapachula",
+    ruta: "Tuxtla → Tapachula",
+    direccion: "AV. 5ta Norte Poniente, Esq Boulevard Antonio Pariente Algarín, Col. Los cafetales #551, Aun costado de plaza sol",
+    horario: "5:00 AM - 11:30 PM", 
+    costo: "$370 - $548",
+    telefono: "9611105513",
+    servicios: ["Pasaje", "Paquetería", "WiFi",],
+    tags: ["⚡ Rápido", "📦 Paquetería"],
+    lat: 16.76156803813806,   
+    lng: -93.13832500107726
+  },
+{
+    nombre: "ADO",
+    destino: "Pichucalco",
+    ruta: "Tuxtla → Pichucalco",
+    direccion: "AV. 5ta Norte Poniente, Esq Boulevard Antonio Pariente Algarín, Col. Los cafetales #551, Aun costado de plaza sol",
+    horario: "5:00 AM - 11:30 PM", 
+    costo: "$364",
+    telefono: "9611105513",
+    servicios: ["Pasaje", "Paquetería", "WiFi",],
+    tags: ["⚡ Rápido", "📦 Paquetería"],
+    lat: 16.76156803813806,   
+    lng: -93.13832500107726
+  },
+];
+
+    function telefonoHTML(item){
+      if(!item.telefono) return "No disponible";
+      const pretty = item.telefono.replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
+      return `<a href="tel:${item.telefono}">📞 ${pretty}</a> ${item.telefonoNota ? item.telefonoNota : ""}`;
+    }
+
+    function buildCard(item){
+      const searchText = [
+        item.nombre, item.destino, item.ruta, item.direccion,
+        (item.servicios || []).join(" "), (item.tags || []).join(" ")
+      ].join(" ").toLowerCase();
+
+      const tags = (item.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
+      const servicios = (item.servicios || []).join(", ");
+      const mapsEmbed = `https://www.google.com/maps?q=${item.lat},${item.lng}&output=embed`;
+      const mapsLink = `https://www.google.com/maps?q=${item.lat},${item.lng}`;
+
+      return `
+        <article class="card" data-search="${searchText}">
+          <div class="card-header"><h2>${item.nombre}</h2></div>
+          <div class="card-body">
+            <p class="row"><span class="label">Destino:</span> ${item.destino || "Por confirmar"}</p>
+            <p class="row"><span class="label">Ruta:</span> ${item.ruta || "Por confirmar"}</p>
+            <p class="row"><span class="label">Dirección:</span> ${item.direccion || "Por confirmar"}</p>
+            <p class="row"><span class="label">Horario:</span> ${item.horario || "Por confirmar"}</p>
+            <p class="row"><span class="label">Costo aprox:</span> ${item.costo || "Por confirmar"}</p>
+            <p class="row"><span class="label">Tel:</span> ${telefonoHTML(item)}</p>
+            <p class="row"><span class="label">Servicios:</span> ${servicios || "Por confirmar"}</p>
+            <div class="tags">${tags}</div>
+          </div>
+          <iframe loading="lazy" src="${mapsEmbed}"></iframe>
+          <div class="actions">
+            <a class="btn" href="${mapsLink}" target="_blank" rel="noopener">📍 Cómo llegar</a>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderTerminales(data){
+      const cont = document.getElementById("contenedorCards");
+      cont.innerHTML = data.map(buildCard).join("");
+      actualizarContador();
+    }
+
+    function actualizarContador(){
+      const visibles = [...document.querySelectorAll(".card")].filter(c => !c.classList.contains("hidden")).length;
+      document.getElementById("contador").textContent = `Mostrando ${visibles} terminal${visibles===1?"":"es"}`;
+      document.getElementById("sinResultados").style.display = visibles ? "none" : "block";
+    }
+
+    function filtrar(){
+      const q = document.getElementById("busqueda").value.trim().toLowerCase();
+      document.querySelectorAll(".card").forEach(card=>{
+        const txt = card.getAttribute("data-search") || "";
+        card.classList.toggle("hidden", !txt.includes(q));
+      });
+      actualizarContador();
+    }
+
+    renderTerminales(TERMINALES);
+  </script>
+</body>
+</html>
