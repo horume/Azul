@@ -738,7 +738,7 @@ function poblar(ks, mob=false){
         <div class="ruta-hint">${ITI[k]?ITI[k].split('–')[0].trim():'Tuxtla Gutiérrez'}</div>
       </div>
       <div class="ruta-chevron">›</div>`;
-    d.onclick=()=>{verRuta(k);if(mob)cerrarBS();};
+    d.onclick=()=>{verRuta(k);};
     el.appendChild(d);
   });
   const ht=document.getElementById(headId);
@@ -811,6 +811,14 @@ let bounds=null;
 });
 
 if(bounds&&bounds.isValid())mapa.fitBounds(bounds,{padding:[40,40],maxZoom:15});
+
+  if(window.innerWidth<=640){
+    cerrarBS();
+    const btn=document.getElementById('btnPanel');
+    if(btn)btn.style.display='flex';
+  }else if(bounds&&bounds.isValid()){
+    mapa.panBy([80,0],{animate:true,duration:0.25});
+  }
 
   // Marcar activo en listas
   ['des-','mob-'].forEach(p=>{
@@ -1076,16 +1084,7 @@ function buscarRutas(mob=false){
       d.className='plan-res-item';
       d.innerHTML=`<div class="plan-res-num" style="color:${color}">Ruta ${r.numero}</div>
         <div class="plan-res-dist">~${Math.round(dO)}m al origen · ~${Math.round(dD)}m al destino</div>`;
-      d.onclick=()=>{
-  verRuta(k, true);
-
-  // Si estamos en móvil, cerrar panel siempre (independiente de "mob")
-  if(window.innerWidth<=640){
-    cerrarBS();
-    const btn=document.getElementById('btnPanel');
-    if(btn)btn.style.display='flex';
-  }
-};
+      d.onclick=()=>{verRuta(k, true);};
       c.appendChild(d);
     });
   });
