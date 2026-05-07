@@ -601,6 +601,9 @@ let ptOrigen=null, ptDestino=null;
 let bsAbierto=false;
 let modoMenu='rutas';
 const keys=Object.keys(RD);
+const MOBILE_BREAKPOINT=640;
+const DESKTOP_ROUTE_PAN_X=80;
+const DESKTOP_ROUTE_PAN_DURATION=0.25;
 
 function cambiarModoMenu(modo, mob=false){
   if(!mob)modoMenu=modo;
@@ -812,12 +815,12 @@ let bounds=null;
 
 if(bounds&&bounds.isValid())mapa.fitBounds(bounds,{padding:[40,40],maxZoom:15});
 
-  if(window.innerWidth<=640){
+  if(window.innerWidth<=MOBILE_BREAKPOINT){
     cerrarBS();
     const btn=document.getElementById('btnPanel');
     if(btn)btn.style.display='flex';
   }else if(bounds&&bounds.isValid()){
-    mapa.panBy([80,0],{animate:true,duration:0.25});
+    mapa.panBy([DESKTOP_ROUTE_PAN_X,0],{animate:true,duration:DESKTOP_ROUTE_PAN_DURATION});
   }
 
   // Marcar activo en listas
