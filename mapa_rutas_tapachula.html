@@ -133,14 +133,20 @@
         const selectedRoute = document.getElementById('selected-route');
         const toggleRoutesButton = document.getElementById('toggle-routes');
         const routeButtons = [];
+        let resizeFrame = null;
 
         function isMobileViewport() {
             return window.matchMedia('(max-width: 768px)').matches;
         }
 
         function updateToggleButtonText() {
-            toggleRoutesButton.innerText = routeInfo.classList.contains('is-hidden') || routeInfo.classList.contains('is-collapsed')
-                ? 'Ver rutas'
+            if (routeInfo.classList.contains('is-hidden')) {
+                toggleRoutesButton.innerText = 'Ver rutas';
+                return;
+            }
+
+            toggleRoutesButton.innerText = routeInfo.classList.contains('is-collapsed')
+                ? 'Expandir rutas'
                 : 'Ocultar rutas';
         }
 
@@ -192,16 +198,14 @@
             marker.bindPopup(route.details);
 
             var routeButton = document.createElement('button');
-            var routeButtonWrapper = document.createElement('div');
             routeButton.type = 'button';
             routeButton.className = 'route-button';
             routeButton.innerText = route.number;
             routeButton.addEventListener('click', function() {
                 selectRoute(route, marker);
             });
-            routeButtonWrapper.appendChild(routeButton);
-            routeList.appendChild(routeButtonWrapper);
-            routeButtons.push({ route: route, button: routeButton, wrapper: routeButtonWrapper });
+            routeList.appendChild(routeButton);
+            routeButtons.push({ route: route, button: routeButton });
 
             marker.on('click', function() {
                 selectRoute(route, marker);
@@ -214,7 +218,7 @@
 
             routeButtons.forEach(function(entry) {
                 const isMatch = entry.route.number.toLowerCase().includes(searchValue);
-                entry.wrapper.style.display = isMatch ? '' : 'none';
+                entry.button.style.display = isMatch ? '' : 'none';
 
                 if (!firstMatch && isMatch) {
                     firstMatch = entry.route;
@@ -227,15 +231,21 @@
         });
 
         window.addEventListener('resize', function() {
-            if (isMobileViewport()) {
-                updateToggleButtonText();
-                refreshMapSize();
-                return;
+            if (resizeFrame) {
+                cancelAnimationFrame(resizeFrame);
             }
 
-            routeInfo.classList.remove('is-hidden', 'is-collapsed');
-            updateToggleButtonText();
-            refreshMapSize();
+            resizeFrame = requestAnimationFrame(function() {
+                if (isMobileViewport()) {
+                    updateToggleButtonText();
+                    refreshMapSize();
+                    return;
+                }
+
+                routeInfo.classList.remove('is-hidden', 'is-collapsed');
+                updateToggleButtonText();
+                refreshMapSize();
+            });
         });
 
         setRoutePanelState(isMobileViewport() ? 'hidden' : 'expanded');
