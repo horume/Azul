@@ -24,6 +24,28 @@
             background-color: rgba(255, 255, 255, 0.8);
             padding: 15px;
             border-radius: 8px;
+            transition: max-height 0.3s ease, min-height 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+        }
+        @media (max-width: 768px) {
+            .map {
+                height: 75vh;
+            }
+            #route-info {
+                position: fixed;
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+                z-index: 1000;
+                margin: 0;
+                max-height: 55vh;
+                overflow-y: auto;
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+            }
+            #route-info.route-selected {
+                min-height: 25vh;
+                max-height: 25vh;
+            }
         }
     </style>
 </head>
@@ -36,6 +58,7 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([14.8333, -92.4167], 13); // Centered on Tapachula
+        var routeInfo = document.getElementById('route-info');
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -48,12 +71,28 @@
             { number: 'ruta_017tapreg', lat: 14.829, lng: -92.418, details: 'Details about ruta_017tapreg' },
         ];
 
+        function updateMobilePanelState() {
+            if (window.innerWidth > 768) {
+                routeInfo.classList.remove('route-selected');
+            }
+            setTimeout(function() {
+                map.invalidateSize();
+            }, 300);
+        }
+
         routes.forEach(route => {
             var marker = L.marker([route.lat, route.lng]).addTo(map);
             marker.bindPopup(route.details);
 
             marker.on('click', function() {
-                document.getElementById('route-info').innerText = route.details;
+                routeInfo.innerText = route.details;
+                if (window.innerWidth <= 768) {
+                    routeInfo.classList.add('route-selected');
+                }
+                map.setView([route.lat, route.lng], 15);
+                setTimeout(function() {
+                    map.invalidateSize();
+                }, 300);
             });
         });
 
@@ -61,10 +100,19 @@
             let searchValue = e.target.value.toLowerCase();
             routes.forEach(route => {
                 if (route.number.toLowerCase().includes(searchValue)) {
+                    routeInfo.innerText = route.details;
+                    if (window.innerWidth <= 768) {
+                        routeInfo.classList.add('route-selected');
+                    }
                     map.setView([route.lat, route.lng], 15);
+                    setTimeout(function() {
+                        map.invalidateSize();
+                    }, 300);
                 }
             });
         });
+
+        window.addEventListener('resize', updateMobilePanelState);
     </script>
 </body>
 </html>
