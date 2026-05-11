@@ -138,28 +138,26 @@
             return window.matchMedia('(max-width: 768px)').matches;
         }
 
-        function syncToggleLabel() {
+        function updateToggleButtonText() {
             toggleRoutesButton.innerText = routeInfo.classList.contains('is-hidden') || routeInfo.classList.contains('is-collapsed')
                 ? 'Ver rutas'
                 : 'Ocultar rutas';
         }
 
         function refreshMapSize() {
-            requestAnimationFrame(function() {
-                map.invalidateSize();
-            });
+            map.invalidateSize();
         }
 
         function setRoutePanelState(state) {
             if (!isMobileViewport()) {
                 routeInfo.classList.remove('is-hidden', 'is-collapsed');
-                syncToggleLabel();
+                updateToggleButtonText();
                 return;
             }
 
             routeInfo.classList.toggle('is-hidden', state === 'hidden');
             routeInfo.classList.toggle('is-collapsed', state === 'collapsed');
-            syncToggleLabel();
+            updateToggleButtonText();
             refreshMapSize();
         }
 
@@ -168,7 +166,6 @@
 
             routeButtons.forEach(function(entry) {
                 entry.button.classList.toggle('is-active', entry.route.number === route.number);
-                entry.wrapper.style.display = '';
             });
 
             map.setView([route.lat, route.lng], 15);
@@ -183,12 +180,11 @@
         }
 
         toggleRoutesButton.addEventListener('click', function() {
-            if (routeInfo.classList.contains('is-hidden') || routeInfo.classList.contains('is-collapsed')) {
-                setRoutePanelState('expanded');
-                return;
-            }
-
-            setRoutePanelState('hidden');
+            setRoutePanelState(
+                routeInfo.classList.contains('is-hidden') || routeInfo.classList.contains('is-collapsed')
+                    ? 'expanded'
+                    : 'hidden'
+            );
         });
 
         routes.forEach(route => {
@@ -232,13 +228,13 @@
 
         window.addEventListener('resize', function() {
             if (isMobileViewport()) {
-                syncToggleLabel();
+                updateToggleButtonText();
                 refreshMapSize();
                 return;
             }
 
             routeInfo.classList.remove('is-hidden', 'is-collapsed');
-            syncToggleLabel();
+            updateToggleButtonText();
             refreshMapSize();
         });
 
