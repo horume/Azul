@@ -58,9 +58,6 @@
         .route-panel.collapsed #route-list {
             display: none;
         }
-        .route-panel.collapsed {
-            overflow-y: auto;
-        }
         @media (max-width: 768px) {
             .app {
                 padding: 10px;
@@ -122,6 +119,7 @@
         const routeInfo = document.getElementById('route-info');
         const routePanel = document.getElementById('route-panel');
         const toggleRoutesBtn = document.getElementById('toggle-routes');
+        const MAP_RESIZE_DELAY = 200;
 
         const routes = [
             { number: 'ruta_01tapd', lat: 14.827, lng: -92.416, details: 'Details about ruta_01tapd' },
@@ -137,7 +135,7 @@
         function refreshMapSize() {
             setTimeout(function() {
                 map.invalidateSize();
-            }, 200);
+            }, MAP_RESIZE_DELAY);
         }
 
         function setPanelCollapsed(collapsed) {
@@ -159,8 +157,8 @@
         }
 
         toggleRoutesBtn.addEventListener('click', function() {
-            const shouldCollapse = !routePanel.classList.contains('collapsed');
-            setPanelCollapsed(shouldCollapse);
+            const willBeCollapsed = !routePanel.classList.contains('collapsed');
+            setPanelCollapsed(willBeCollapsed);
         });
 
         const routeButtons = [];
