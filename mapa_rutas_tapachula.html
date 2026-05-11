@@ -19,11 +19,86 @@
         .search-container {
             margin: 20px;
         }
+        .search-container input {
+            width: 100%;
+            max-width: 320px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .route-toggle {
+            display: none;
+        }
         #route-info {
             margin: 20px;
             background-color: rgba(255, 255, 255, 0.8);
             padding: 15px;
             border-radius: 8px;
+        }
+        .route-title {
+            margin: 0 0 10px;
+        }
+        .route-details {
+            margin-bottom: 12px;
+        }
+        .route-list {
+            display: grid;
+            gap: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .route-button {
+            width: 100%;
+            padding: 10px 12px;
+            text-align: left;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+        }
+        .route-button.is-active {
+            border-color: #3d6fb6;
+            background: #eef4ff;
+        }
+        @media (max-width: 768px) {
+            .search-container {
+                margin-bottom: 12px;
+            }
+            .route-toggle {
+                display: block;
+                width: calc(100% - 40px);
+                margin: 0 20px 12px;
+                padding: 10px 12px;
+                border: 0;
+                border-radius: 8px;
+                background: #3d6fb6;
+                color: #fff;
+                font-weight: 600;
+            }
+            #route-info {
+                position: fixed;
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+                margin: 0;
+                max-height: 70vh;
+                overflow: hidden;
+                z-index: 1000;
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+            }
+            #route-info.is-hidden {
+                display: none;
+            }
+            #route-info.is-collapsed {
+                height: 25vh;
+                max-height: 25vh;
+            }
+            #route-info.is-collapsed .route-list {
+                display: none;
+            }
+            .map {
+                height: calc(100vh - 140px);
+                min-height: 320px;
+            }
         }
     </style>
 </head>
@@ -31,7 +106,12 @@
     <div class="search-container">
         <input type="text" id="route-search" placeholder="Search by route number..." />
     </div>
-    <div id="route-info"></div>
+    <button id="toggle-routes" class="route-toggle" type="button">Ver rutas</button>
+    <div id="route-info">
+        <h3 class="route-title">Rutas disponibles</h3>
+        <div id="selected-route" class="route-details">Selecciona una ruta para verla en el mapa.</div>
+        <div id="route-list" class="route-list"></div>
+    </div>
     <div id="map" class="map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
@@ -48,23 +128,121 @@
             { number: 'ruta_017tapreg', lat: 14.829, lng: -92.418, details: 'Details about ruta_017tapreg' },
         ];
 
+        const routeInfo = document.getElementById('route-info');
+        const routeList = document.getElementById('route-list');
+        const selectedRoute = document.getElementById('selected-route');
+        const toggleRoutesButton = document.getElementById('toggle-routes');
+        const routeButtons = [];
+
+        function isMobileViewport() {
+            return window.matchMedia('(max-width: 768px)').matches;
+        }
+
+        function syncToggleLabel() {
+            toggleRoutesButton.innerText = routeInfo.classList.contains('is-hidden') || routeInfo.classList.contains('is-collapsed')
+                ? 'Ver rutas'
+                : 'Ocultar rutas';
+        }
+
+        function refreshMapSize() {
+            requestAnimationFrame(function() {
+                map.invalidateSize();
+            });
+        }
+
+        function setRoutePanelState(state) {
+            if (!isMobileViewport()) {
+                routeInfo.classList.remove('is-hidden', 'is-collapsed');
+                syncToggleLabel();
+                return;
+            }
+
+            routeInfo.classList.toggle('is-hidden', state === 'hidden');
+            routeInfo.classList.toggle('is-collapsed', state === 'collapsed');
+            syncToggleLabel();
+            refreshMapSize();
+        }
+
+        function selectRoute(route, marker) {
+            selectedRoute.innerText = route.number + ': ' + route.details;
+
+            routeButtons.forEach(function(entry) {
+                entry.button.classList.toggle('is-active', entry.route.number === route.number);
+                entry.wrapper.style.display = '';
+            });
+
+            map.setView([route.lat, route.lng], 15);
+
+            if (marker) {
+                marker.openPopup();
+            }
+
+            if (isMobileViewport()) {
+                setRoutePanelState('collapsed');
+            }
+        }
+
+        toggleRoutesButton.addEventListener('click', function() {
+            if (routeInfo.classList.contains('is-hidden') || routeInfo.classList.contains('is-collapsed')) {
+                setRoutePanelState('expanded');
+                return;
+            }
+
+            setRoutePanelState('hidden');
+        });
+
         routes.forEach(route => {
             var marker = L.marker([route.lat, route.lng]).addTo(map);
             marker.bindPopup(route.details);
 
+            var routeButton = document.createElement('button');
+            var routeButtonWrapper = document.createElement('div');
+            routeButton.type = 'button';
+            routeButton.className = 'route-button';
+            routeButton.innerText = route.number;
+            routeButton.addEventListener('click', function() {
+                selectRoute(route, marker);
+            });
+            routeButtonWrapper.appendChild(routeButton);
+            routeList.appendChild(routeButtonWrapper);
+            routeButtons.push({ route: route, button: routeButton, wrapper: routeButtonWrapper });
+
             marker.on('click', function() {
-                document.getElementById('route-info').innerText = route.details;
+                selectRoute(route, marker);
             });
         });
 
         document.getElementById('route-search').addEventListener('input', function(e) {
             let searchValue = e.target.value.toLowerCase();
-            routes.forEach(route => {
-                if (route.number.toLowerCase().includes(searchValue)) {
-                    map.setView([route.lat, route.lng], 15);
+            let firstMatch = null;
+
+            routeButtons.forEach(function(entry) {
+                const isMatch = entry.route.number.toLowerCase().includes(searchValue);
+                entry.wrapper.style.display = isMatch ? '' : 'none';
+
+                if (!firstMatch && isMatch) {
+                    firstMatch = entry.route;
                 }
             });
+
+            if (firstMatch) {
+                map.setView([firstMatch.lat, firstMatch.lng], 15);
+            }
         });
+
+        window.addEventListener('resize', function() {
+            if (isMobileViewport()) {
+                syncToggleLabel();
+                refreshMapSize();
+                return;
+            }
+
+            routeInfo.classList.remove('is-hidden', 'is-collapsed');
+            syncToggleLabel();
+            refreshMapSize();
+        });
+
+        setRoutePanelState(isMobileViewport() ? 'hidden' : 'expanded');
     </script>
 </body>
 </html>
