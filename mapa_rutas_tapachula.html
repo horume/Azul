@@ -120,7 +120,6 @@
         const routePanel = document.getElementById('route-panel');
         const toggleRoutesBtn = document.getElementById('toggle-routes');
         const DEFAULT_ROUTE_ZOOM = 15;
-        const MAP_RESIZE_DELAY = 200;
         const TEXT_SHOW_ROUTES = 'Ver rutas';
         const TEXT_HIDE_ROUTES = 'Ocultar rutas';
 
@@ -135,10 +134,16 @@
             return window.matchMedia('(max-width: 768px)').matches;
         }
 
+        function syncToggleButtonLabel() {
+            toggleRoutesBtn.innerText = routePanel.classList.contains('collapsed') ? TEXT_SHOW_ROUTES : TEXT_HIDE_ROUTES;
+        }
+
         function refreshMapSize() {
-            setTimeout(function() {
-                map.invalidateSize();
-            }, MAP_RESIZE_DELAY);
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    map.invalidateSize();
+                });
+            });
         }
 
         function setPanelCollapsed(collapsed) {
@@ -146,7 +151,7 @@
                 return;
             }
             routePanel.classList.toggle('collapsed', collapsed);
-            toggleRoutesBtn.innerText = collapsed ? TEXT_SHOW_ROUTES : TEXT_HIDE_ROUTES;
+            syncToggleButtonLabel();
             refreshMapSize();
         }
 
@@ -207,9 +212,11 @@
         window.addEventListener('resize', function() {
             if (!isMobileViewport()) {
                 routePanel.classList.remove('collapsed');
-                toggleRoutesBtn.innerText = TEXT_SHOW_ROUTES;
             }
+            syncToggleButtonLabel();
         });
+
+        syncToggleButtonLabel();
     </script>
 </body>
 </html>
