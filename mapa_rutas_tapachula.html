@@ -119,7 +119,10 @@
         const routeInfo = document.getElementById('route-info');
         const routePanel = document.getElementById('route-panel');
         const toggleRoutesBtn = document.getElementById('toggle-routes');
+        const DEFAULT_ROUTE_ZOOM = 15;
         const MAP_RESIZE_DELAY = 200;
+        const TEXT_SHOW_ROUTES = 'Ver rutas';
+        const TEXT_HIDE_ROUTES = 'Ocultar rutas';
 
         const routes = [
             { number: 'ruta_01tapd', lat: 14.827, lng: -92.416, details: 'Details about ruta_01tapd' },
@@ -143,13 +146,13 @@
                 return;
             }
             routePanel.classList.toggle('collapsed', collapsed);
-            toggleRoutesBtn.innerText = collapsed ? 'Ver rutas' : 'Ocultar rutas';
+            toggleRoutesBtn.innerText = collapsed ? TEXT_SHOW_ROUTES : TEXT_HIDE_ROUTES;
             refreshMapSize();
         }
 
         function selectRoute(route, marker) {
             routeInfo.innerText = route.details;
-            map.setView([route.lat, route.lng], 15);
+            map.setView([route.lat, route.lng], DEFAULT_ROUTE_ZOOM);
             if (marker) {
                 marker.openPopup();
             }
@@ -197,14 +200,14 @@
             });
 
             if (firstMatch) {
-                map.setView([firstMatch.route.lat, firstMatch.route.lng], 15);
+                map.setView([firstMatch.route.lat, firstMatch.route.lng], DEFAULT_ROUTE_ZOOM);
             }
         });
 
         window.addEventListener('resize', function() {
             if (!isMobileViewport()) {
                 routePanel.classList.remove('collapsed');
-                toggleRoutesBtn.innerText = 'Ver rutas';
+                toggleRoutesBtn.innerText = TEXT_SHOW_ROUTES;
             }
         });
     </script>
