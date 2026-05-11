@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Rutas Tapachula</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--azul:#1A73E8;--verde:#0F9D58;--rojo:#D93025;--surface:#fff;--surface2:#F8F9FA;--borde:#E0E0E0;--texto:#202124;--texto2:#5F6368;}
+html,body{height:100%;font-family:'Roboto',sans-serif;background:#F1F3F4;overflow:hidden;}
+.app{display:flex;height:100vh;flex-direction:column;}
+.topbar{background:var(--surface);box-shadow:0 2px 4px rgba(0,0,0,.08);padding:0 16px;height:56px;display:flex;align-items:center;gap:12px;z-index:200;}
+.logo-img{height:44px;width:auto;}
+.logo-nombre{font-family:'Google Sans',sans-serif;font-weight:700;font-size:17px;color:var(--texto);}
+.topbar-badge{background:#E8F0FE;color:var(--azul);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:500;}
+.menu-btn {
+  border:1px solid #e0e0e0;border-radius:999px;
+  background:var(--surface2);color:var(--texto2);
+  padding:9px 19px 9px 19px;
+  font-family:'Google Sans',sans-serif;font-weight:500;font-size:16px;
+  display:flex;align-items:center;gap:7px;cursor:pointer;
+  box-shadow:0 1px 6px rgba(0,0,0,.07);
+  z-index:500;margin-left:8px;
+}
+@media(max-width:700px){
+  #btnMenu.menu-btn {
+    position:fixed;right:14px;top:12px;
+    box-shadow:0 2px 25px rgba(0,0,0,.10)!important; background:#fff;
+  }
+}
+.main{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:370px;background:var(--surface);box-shadow:2px 0 8px rgba(0,0,0,.11);display:flex;flex-direction:column;overflow:hidden;}
+.menu-tabs{display:flex;gap:8px;padding:8px 12px;border-bottom:1px solid var(--borde);background:var(--surface2);}
+.menu-tab{flex:1;border:1px solid var(--borde);background:var(--surface);border-radius:999px;padding:8px 10px;cursor:pointer;font-family:'Google Sans',sans-serif;font-size:13px;font-weight:500;color:var(--texto2);transition:all .15s;}
+.menu-tab:hover{border-color:var(--azul);color:var(--azul);}
+.menu-tab.active{background:#E8F0FE;border-color:transparent;color:var(--azul);}
+.menu-panel{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.menu-panel.active{display:flex;}
+.search-section{padding:12px 16px;border-bottom:1px solid var(--borde);}
+.search-field{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--borde);border-radius:24px;padding:0 16px;}
+.search-field input{flex:1;border:none;outline:none;background:none;font-size:14px;color:var(--texto);padding:10px 0;}
+.lista-header{padding:8px 16px;font-size:11px;color:var(--texto2);font-weight:500;}
+.lista-rutas{flex:1;overflow-y:auto;}
+.ruta-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-bottom:1px solid #F1F3F4;transition:background .1s;}
+.ruta-item:hover{background:var(--surface2);}
+.ruta-item.activa{background:#E8F0FE;}
+.ruta-linea{width:4px;height:32px;border-radius:2px;display:flex;gap:1px;}
+.ruta-linea-part{flex:1;border-radius:1px;}
+.ruta-num{font-family:'Google Sans',sans-serif;font-weight:500;font-size:14px;color:var(--texto);}
+.ruta-hint{font-size:11px;color:var(--texto2);}
+.plan-section{padding:12px 16px;border-bottom:1px solid var(--borde);flex-shrink:0;background:var(--surface2);}
+.plan-titulo{font-family:'Google Sans',sans-serif;font-weight:500;font-size:13px;color:var(--azul);margin-bottom:8px;}
+.plan-inputs{display:flex;flex-direction:column;gap:8px;}
+.plan-row{display:flex;align-items:center;gap:8px;}
+.plan-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.btn-marca{flex:1;background:var(--surface);border:1px solid var(--borde);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--texto2);cursor:pointer;transition:all .15s;text-align:left;}
+.btn-marca:hover{border-color:var(--azul);color:var(--azul);}
+.btn-marca.marcado{border-color:var(--verde);color:var(--verde);background:#F0FDF4;}
+.btn-geo{border:1px solid var(--borde);background:var(--surface);color:var(--texto2);border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.btn-geo:hover{border-color:var(--azul);color:var(--azul);}
+.plan-slider-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.plan-slider-label{font-size:12px;color:var(--texto2);}
+input[type=range]{width:100px;}
+input[type=number]{width:56px;padding:5px;border-radius:8px;border:1px solid var(--borde);font-size:13px;}
+.plan-acciones{display:flex;gap:8px;margin-top:8px;}
+.btn-buscar{flex:1;background:var(--azul);color:white;border:none;border-radius:8px;padding:9px;font-family:'Google Sans',sans-serif;font-weight:500;font-size:13px;cursor:pointer;transition:background .15s;}
+.btn-buscar:hover{background:#1557B0;}
+.btn-limpiar{background:none;border:1px solid var(--borde);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--texto2);cursor:pointer;}
+.plan-resultados{margin-top:8px;max-height:150px;overflow-y:auto;padding:0 16px;}
+.plan-res-item{padding:8px 10px;margin-bottom:4px;border-radius:8px;border:1px solid var(--borde);cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;background:var(--surface);font-size:12px;}
+.plan-res-item:hover{border-color:var(--azul);background:#E8F0FE;}
+.plan-res-num{font-family:'Google Sans',sans-serif;font-weight:700;font-size:14px;color:var(--azul);}
+.drawer-menu {
+  display:none; position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(30,35,50,.14);z-index:9999;
+}
+.drawer-content {
+  background:#fff;border-radius:22px 22px 0 0;box-shadow:0 12px 40px rgba(0,0,0,.12);
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:-430px;width:94vw;max-width:430px;padding:12px 0 24px 0;
+  transition:bottom .3s cubic-bezier(.77,0,.18,1);
+}
+.drawer-menu.open .drawer-content {bottom:0;}
+.drawer-item {padding:18px 24px;font-size:18px;font-family:'Google Sans',sans-serif;color:#222;cursor:pointer;border-bottom:1px solid #ededed;}
+.drawer-item:last-child, .drawer-close {border-bottom:none;font-weight:500;color:#b71c1c;text-align:center;}
+@media(min-width:700px){
+  .drawer-content {max-width:340px;}
+}
+@media(min-width:900px){
+  .drawer-content {top:74px;bottom:auto;border-radius:16px;}
+  .drawer-menu.open .drawer-content {bottom:auto;}
+}
+@media (max-width:899px){
+  .sidebar{display:none!important;}
+  .modal-sheet {display:flex;}
+  .modal-sheet-content{
+    box-shadow:0 8px 40px rgba(0,0,0,.15);
+    background:#fff;
+    position:absolute;left:50%;transform:translateX(-50%);
+    bottom:0;width:100vw;max-width:500px;
+    border-radius:22px 22px 0 0;
+    min-height:260px;
+    max-height:94vh;overflow:auto;
+    padding-bottom:26px;
+    animation:slideInBottomSheet .33s cubic-bezier(.45,.93,.24,1.15);
+    transition: max-height 0.35s cubic-bezier(.45,.93,.24,1.15), min-height 0.35s cubic-bezier(.45,.93,.24,1.15);
+  }
+  /* Estado colapsado: solo una cuarta parte de pantalla */
+  .modal-sheet-content.colapsado {
+    min-height: 0;
+    max-height: 26vh;
+    overflow: hidden;
+  }
+  @keyframes slideInBottomSheet{
+    from{transform:translateX(-50%) translateY(80px);opacity:0;}
+    to{transform:translateX(-50%) translateY(0);opacity:1;}
+  }
+}
+.modal-sheet {
+  display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:10010;
+  background:rgba(47,57,110,.08);
+  /* Cuando está colapsado, no bloquea el mapa */
+  pointer-events: none;
+}
+.modal-sheet.active {display:flex; pointer-events: none;}
+.modal-sheet-content { pointer-events: all; }
+
+/* Pill de ruta seleccionada visible en estado colapsado */
+.ruta-seleccionada-pill {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px 6px 16px;
+}
+.modal-sheet-content.colapsado .ruta-seleccionada-pill {
+  display: flex;
+}
+/* Cuando está colapsado, ocultar el contenido normal del panel */
+.modal-sheet-content.colapsado .sheet-main-content {
+  display: none;
+}
+/* Handle visual para indicar que se puede expandir */
+.sheet-handle {
+  width: 36px; height: 4px; background: #ddd; border-radius: 2px;
+  margin: 8px auto 4px auto;
+  cursor: pointer;
+}
+/* Botón expandir dentro del pill */
+.pill-expandir {
+  margin-left: auto;
+  background: #E8F0FE;
+  color: var(--azul);
+  border: none;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: 'Google Sans', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.modal-bienvenida {
+  position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:13000;
+  background:rgba(47,57,110,.07);display:flex;align-items:center;justify-content:center;
+  animation:slideInModal .44s cubic-bezier(.5,1,0,.85);
+}
+@keyframes slideInModal{from{opacity:0;transform:translateY(60px);}to{opacity:1;transform:none;}}
+.modal-card {background:#fff;border-radius:16px;box-shadow:0 10px 36px 0 rgba(0,0,0,.12);padding:22px 22px 22px 22px;max-width:370px;width:calc(100vw - 40px);}
+.modal-title{font-family:'Google Sans',sans-serif;font-size:21px;font-weight:700;line-height:1.16;}
+.modal-actions{margin-top:19px;display:flex;gap:9px;}
+.action-btn{padding:10px 13px;border-radius:9px;border:1px solid #ededed;font-family:'Google Sans',sans-serif;font-weight:500;font-size:15px;background:#f7f8fc;color:#234;cursor:pointer;transition:.11s;}
+.action-btn.azul{background:#1976d2!important;color:white;border-color:#1976d2;}
+.action-btn.gris{background:#ededed!important;color:#444;}
+.mapa-wrap{flex:1;position:relative;}
+#mapa{width:100%;height:100%;}
+.fab{position:absolute;bottom:24px;right:16px;background:var(--azul);color:white;border:none;border-radius:24px;padding:12px 16px;cursor:pointer;font-weight:500;z-index:400;box-shadow:0 4px 12px rgba(0,0,0,.15);}
+.fab:hover{background:#1557B0;}
+</style>
+</head>
+<body>
+    <div style="padding: 10px;">
+  <a href="https://moviap.com/" style="
+    display: inline-block;
+    padding: 10px 16px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+  ">
+    ← Volver al inicio
+  </a>
+</div>
+<div class="topbar">
+  <img src="https://moviap.com/wp-content/uploads/2026/05/Gemini_Generated_Image_h9aevkh9aevkh9ae.png" class="logo-img" style="margin-right:12px" alt="Logo MOVIAP"/>
+  <div>
+    <div class="logo-nombre">Rutas Tapachula</div>
+  </div>
+  <div style="flex:1;"></div>
+  <div class="topbar-badge" id="topBadge">Cargando...</div>
+  <button id="btnMenu" class="menu-btn" onclick="abrirMenu()" aria-label="Abrir menú"><span>Menu</span> <span style="font-size:15px;">&#709;</span></button>
+</div>
+<!-- DRAWER MENU -->
+<div id="drawerMenu" class="drawer-menu">
+  <div class="drawer-content">
+    <div class="drawer-item" onclick="accionDrawer('rutas')">Ver rutas</div>
+    <div class="drawer-item" onclick="accionDrawer('punto')">Búsqueda punto a punto</div>
+    <div class="drawer-item" onclick="accionDrawer('limpiar')">Limpiar mapa</div>
+    <div class="drawer-item drawer-close" onclick="cerrarMenu()">Cerrar</div>
+  </div>
+</div>
+<!-- MODAL BIENVENIDA -->
+<div id="modalBienvenida" class="modal-bienvenida">
+  <div class="modal-card">
+    <div class="modal-title">Bienvenido a Rutas Tapachula</div>
+    <div style="margin-top:6px;color:#444;font-size:14px;">
+      Para iniciar, usa el <b>MENÚ</b> de arriba y elige <b>Ver rutas</b> o <b>Búsqueda punto a punto</b>. Te guiamos paso a paso.
+    </div>
+    <div class="modal-actions">
+      <button class="action-btn" onclick="accionDrawer('rutas');cerrarModalBienvenida();">Ver rutas</button>
+      <button class="action-btn azul" onclick="accionDrawer('punto');cerrarModalBienvenida();">Búsqueda punto a punto</button>
+      <button class="action-btn gris" onclick="cerrarModalBienvenida()">Cerrar</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL PANEL MOBILE -->
+<div id="modalPanel" class="modal-sheet">
+  <div id="modalPanelContent" class="modal-sheet-content">
+    <!-- Handle y pill de ruta seleccionada (solo visible colapsado) -->
+    <div class="sheet-handle" id="sheetHandle" onclick="expandirSheet()"></div>
+    <div class="ruta-seleccionada-pill" id="rutaSeleccionadaPill">
+      <span id="pillColorDot" style="width:10px;height:10px;border-radius:50%;background:#1A73E8;flex-shrink:0;"></span>
+      <span id="pillNombreRuta" style="font-family:'Google Sans',sans-serif;font-weight:500;font-size:14px;color:#202124;">Ruta</span>
+      <button class="pill-expandir" onclick="expandirSheet()">Ver lista ▲</button>
+    </div>
+    <!-- Contenido principal del sheet -->
+    <div class="sheet-main-content" id="sheetMainContent"></div>
+  </div>
+</div>
+<div class="app">
+  <div class="main">
+    <div class="sidebar">
+      <div class="menu-tabs">
+        <button class="menu-tab" id="tabRutas" onclick="mostrarPanelRutas()">Rutas</button>
+        <button class="menu-tab" id="tabPlan" onclick="mostrarPanelPuntoAPunto()">Planificar</button>
+      </div>
+      <div class="menu-panel" id="panelRutas">
+        <button class="btn-limpiar cerrar-modalboton" style="float:right;margin-top:1px;margin-right:1px;">✕</button>
+        <div class="search-section">
+          <div class="search-field">
+            <input type="text" id="busqueda" placeholder="Buscar ruta..." oninput="filtrarRutas(this.value)">
+          </div>
+        </div>
+        <div class="lista-header" id="listaHeader">Cargando rutas...</div>
+        <div class="lista-rutas" id="listaRutas"></div>
+      </div>
+      <div class="menu-panel" id="panelPlan">
+        <button class="btn-limpiar cerrar-modalboton" style="float:right;margin-top:1px;margin-right:1px;">✕</button>
+        <div class="plan-section">
+          <div class="plan-titulo">📍 Planificar Viaje</div>
+          <div class="plan-inputs">
+            <div class="plan-row">
+              <div class="plan-dot" style="background:#0F9D58;"></div>
+              <button class="btn-marca" id="btnOrigen" onclick="iniciarMarca('origen')">Punto de partida</button>
+              <button class="btn-geo" onclick="usarGPS('origen')">📡 Mi Ubicación</button>
+            </div>
+            <div class="plan-row">
+              <div class="plan-dot" style="background:#1A73E8;"></div>
+              <button class="btn-marca" id="btnDestino" onclick="iniciarMarca('destino')">Punto de llegada</button>
+              <button class="btn-geo" onclick="usarGPS('destino')">📡 Mi Ubicación</button>
+            </div>
+            <div class="plan-slider-row">
+              <span class="plan-slider-label">Radio:</span>
+              <input type="range" id="distanciaSlider" min="200" max="4000" step="100" value="1200" oninput="actualizarNumeroDistancia(this.value)">
+              <input type="number" min="50" max="10000" step="50" id="distanciaNumero" value="1200" style="width:60px" oninput="actualizarSliderDistancia(this.value)">
+              <span class="plan-slider-label">metros</span>
+            </div>
+          </div>
+          <div class="plan-acciones">
+            <button class="btn-buscar" id="btnBuscarRutas" onclick="buscarRutas()">🔍 Buscar rutas</button>
+            <button class="btn-limpiar" onclick="limpiarPlan()">✕ Limpiar</button>
+          </div>
+          <div class="plan-resultados" id="planResultados"></div>
+        </div>
+      </div>
+    </div>
+    <div class="mapa-wrap">
+      <div id="mapa"></div>
+      <button class="fab" onclick="mostrarTodas()">Ver todas</button>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let resultadoBuscadoP2P = '';
+
+/* ── Sheet helpers ── */
+function colapsarSheet(nombreRuta, colorRuta) {
+  const content = document.getElementById('modalPanelContent');
+  content.classList.add('colapsado');
+  // Actualizar pill
+  if (nombreRuta) {
+    document.getElementById('pillNombreRuta').textContent = 'Ruta ' + nombreRuta;
+    document.getElementById('pillColorDot').style.background = colorRuta || '#1A73E8';
+  }
+  // El fondo del modal no bloquea el mapa
+  document.getElementById('modalPanel').style.background = 'transparent';
+}
+
+function expandirSheet() {
+  const content = document.getElementById('modalPanelContent');
+  content.classList.remove('colapsado');
+  document.getElementById('modalPanel').style.background = 'rgba(47,57,110,.08)';
+}
+
+function abrirMenu() {
+  document.getElementById('drawerMenu').style.display = 'block';
+  setTimeout(() => document.getElementById('drawerMenu').classList.add('open'), 10);
+}
+function cerrarMenu() {
+  const dm = document.getElementById('drawerMenu');
+  dm.classList.remove('open');
+  setTimeout(()=>dm.style.display='none',300);
+}
+function cerrarModalBienvenida() { document.getElementById('modalBienvenida').style.display='none'; }
+const isMobile = () => window.innerWidth < 900;
+
+function abrirPanelMobile(html) {
+  const mp = document.getElementById('modalPanel');
+  const mpc = document.getElementById('sheetMainContent');
+  mpc.innerHTML = html;
+  // Asegurarse de que esté expandido al abrir
+  document.getElementById('modalPanelContent').classList.remove('colapsado');
+  mp.style.background = 'rgba(47,57,110,.08)';
+  mp.classList.add('active');
+  setTimeout(()=>{
+    // cerrar botones
+    document.getElementById('modalPanelContent').querySelectorAll('.cerrar-modalboton').forEach(btn=>btn.onclick=()=>cerrarPanelMobile());
+    if(mpc.querySelector('#btnOrigen')){
+      mpc.querySelector('#btnOrigen').onclick = ()=>{
+        cerrarPanelMobile();
+        iniciarMarca('origen');
+      };
+      mpc.querySelector('#btnDestino').onclick = ()=>{
+        cerrarPanelMobile();
+        iniciarMarca('destino');
+      };
+      mpc.querySelector('#btnBuscarRutas').onclick = buscarRutas;
+      if(mpc.querySelectorAll('.btn-geo')[0]) mpc.querySelectorAll('.btn-geo')[0].onclick = ()=>usarGPS('origen');
+      if(mpc.querySelectorAll('.btn-geo')[1]) mpc.querySelectorAll('.btn-geo')[1].onclick = ()=>usarGPS('destino');
+      mpc.querySelector('#distanciaSlider').oninput = e=>actualizarNumeroDistancia(e.target.value);
+      mpc.querySelector('#distanciaNumero').oninput = e=>actualizarSliderDistancia(e.target.value);
+      mpc.querySelector('.btn-limpiar').onclick = limpiarPlan;
+    }
+    if(mpc.querySelector('#busqueda')) {
+      mpc.querySelector('#busqueda').oninput = function(){filtrarRutas(this.value);}
+    }
+    if(mpc.querySelectorAll('.ruta-item').length) {
+      mpc.querySelectorAll('.ruta-item').forEach(item=>{
+        item.onclick = function(){
+          const k = this.id.replace('ruta-','');
+          verRuta(k);
+        }
+      });
+    }
+    // Reinyecta sugerencias punto a punto
+    let pr = mpc.querySelector('.plan-resultados');
+    if(pr && resultadoBuscadoP2P) {
+      pr.innerHTML = resultadoBuscadoP2P;
+      pr.querySelectorAll('.plan-res-item').forEach(item=>{
+        item.onclick = function(){
+          const k = this.getAttribute('data-k');
+          verRuta(k, false);
+        }
+      });
+    }
+    actualizarEstadoPlanificarModal();
+  },100);
+}
+
+function cerrarPanelMobile() {
+  document.getElementById('modalPanel').classList.remove('active');
+  document.getElementById('modalPanelContent').classList.remove('colapsado');
+}
+
+function mostrarPanelRutas() {
+  cerrarPaneles();
+  if(isMobile()) {
+    abrirPanelMobile(document.getElementById('panelRutas').innerHTML);
+  } else {
+    document.getElementById('panelRutas').classList.add('active');
+    document.getElementById('tabRutas').classList.add('active');
+    document.getElementById('tabPlan').classList.remove('active');
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function mostrarPanelPuntoAPunto() {
+  cerrarPaneles();
+  if(isMobile()) {
+    abrirPanelMobile(document.getElementById('panelPlan').innerHTML);
+    setTimeout(()=>{
+      actualizarEstadoPlanificarModal();
+      let pr = document.getElementById('sheetMainContent').querySelector('.plan-resultados');
+      if (pr && resultadoBuscadoP2P) {
+        pr.innerHTML = resultadoBuscadoP2P;
+        pr.querySelectorAll('.plan-res-item').forEach(item=>{
+          item.onclick = function(){
+            const k = this.getAttribute('data-k');
+            verRuta(k, false);
+          }
+        });
+      }
+    },120);
+  } else {
+    document.getElementById('panelPlan').classList.add('active');
+    document.getElementById('tabPlan').classList.add('active');
+    document.getElementById('tabRutas').classList.remove('active');
+    setTimeout(()=>{ actualizarEstadoPlanificarModal(); },200);
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function cerrarPaneles(){
+  document.getElementById('panelRutas')?.classList.remove('active');
+  document.getElementById('panelPlan')?.classList.remove('active');
+  document.getElementById('tabRutas')?.classList.remove('active');
+  document.getElementById('tabPlan')?.classList.remove('active');
+  cerrarPanelMobile();
+}
+document.addEventListener('click',function(e){
+  if(e.target && isMobile() && (e.target.classList.contains('cerrar-modalboton') || e.target.classList.contains('modal-sheet'))){
+    cerrarPanelMobile();
+  }
+});
+function accionDrawer(acc) {
+  cerrarMenu();
+  if(acc==='rutas') mostrarPanelRutas();
+  else if(acc==='punto') mostrarPanelPuntoAPunto();
+  else if(acc==='limpiar') { mostrarTodas(); cerrarPaneles(); }
+}
+function actualizarEstadoPlanificarModal() {
+  let mpc = document.getElementById('sheetMainContent');
+  if (!mpc) return;
+  let bo = mpc.querySelector('#btnOrigen');
+  let bd = mpc.querySelector('#btnDestino');
+  if (bo) {
+    if (ptOrigen) {
+      bo.textContent = `✅ ${ptOrigen.lat.toFixed(4)}, ${ptOrigen.lng.toFixed(4)}`;
+      bo.classList.add('marcado');
+    } else {
+      bo.textContent = 'Punto de partida';
+      bo.classList.remove('marcado');
+    }
+  }
+  if (bd) {
+    if (ptDestino) {
+      bd.textContent = `✅ ${ptDestino.lat.toFixed(4)}, ${ptDestino.lng.toFixed(4)}`;
+      bd.classList.add('marcado');
+    } else {
+      bd.textContent = 'Punto de llegada';
+      bd.classList.remove('marcado');
+    }
+  }
+}
+const COLORES = ['#1A73E8','#0F9D58','#D93025','#F29900','#9334E6','#00ACC1','#E64A19','#558B2F','#AD1457','#1565C0','#00796B','#F57F17','#4527A0','#B71C1C','#0277BD','#827717','#4E342E','#37474F','#E91E63','#1B5E20','#006064','#FF6F00','#311B92','#BF360C','#01579B'];
+let mapa, rutaActiva = null, rutasAgrupadas = {}, capasActuales = [], keys = [], coloresRutas = {}, marcadores = null, ptOrigen = null, ptDestino = null, modoMarca = null, rutasGeometries = {}, DISTANCIA_BUSQUEDA = 1200;
+function aclarColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const nr = Math.min(255, Math.round(r + (255 - r) * 0.5));
+  const ng = Math.min(255, Math.round(g + (255 - g) * 0.5));
+  const nb = Math.min(255, Math.round(b + (255 - b) * 0.5));
+  return '#' + [nr, ng, nb].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function generarNombresRutas() {
+  const rutas = new Set();
+  for (let i = 1; i <= 52; i++) {
+    const num = String(i).padStart(3, '0');
+    rutas.add(`ruta_${num}tapida`);
+    rutas.add(`ruta_${num}tapreg`);
+    rutas.add(`ruta_${num}tapde`);
+    rutas.add(`ruta_${num}tapiz`);
+    rutas.add(`ruta_${num}tapidareg`);
+    rutas.add(`ruta_tapa${num}ida`);
+    rutas.add(`ruta_tapa${num}reg`);
+    rutas.add(`ruta_tapa${num}de`);
+    rutas.add(`ruta_tapa${num}iz`);
+  }
+  return Array.from(rutas);
+}
+window.addEventListener('load', async () => {
+  mapa = L.map('mapa', {center: [14.8979, -92.2519], zoom: 13});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {maxZoom: 19}).addTo(mapa);
+  marcadores = L.layerGroup().addTo(mapa);
+  mapa.on('click', onMapClick);
+  await cargarRutasDelGeoserver();
+  setTimeout(() => mapa.invalidateSize(), 300);
+  document.getElementById('modalBienvenida').style.display='flex';
+});
+async function cargarRutasDelGeoserver() {
+  const rutasNombres = generarNombresRutas();
+  const promesas = rutasNombres.map(rutaNombre =>
+    fetch(`https://mapas.siese.chiapas.gob.mx/geoserver/transporte/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=transporte:${rutaNombre}&maxfeatures=50&outputFormat=application/json`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => ({rutaNombre, data}))
+      .catch(() => ({rutaNombre, data: null}))
+  );
+  const resultados = await Promise.all(promesas);
+  resultados.forEach(({rutaNombre, data}) => {
+    if (data && data.features && data.features.length > 0) {
+      const feature = data.features[0];
+      const texto = feature.properties.text || rutaNombre;
+      const match = rutaNombre.match(/(\d{3})/);
+      if (!match) return;
+      const numRuta = match[1];
+      const esRegreso = rutaNombre.includes('reg') || rutaNombre.includes('iz');
+      if (!rutasAgrupadas[numRuta]) {
+        rutasAgrupadas[numRuta] = {
+          numero: texto.split(/\s+/)[1] || numRuta,
+          ida: null,
+          regreso: null
+        };
+        rutasGeometries[numRuta] = {ida: null, regreso: null};
+      }
+      if (esRegreso) {
+        rutasAgrupadas[numRuta].regreso = feature;
+        rutasGeometries[numRuta].regreso = feature.geometry;
+      } else {
+        rutasAgrupadas[numRuta].ida = feature;
+        rutasGeometries[numRuta].ida = feature.geometry;
+      }
+    }
+  });
+  keys = Object.keys(rutasAgrupadas).sort((a, b) => parseInt(a) - parseInt(b));
+  document.getElementById('topBadge').textContent = `${keys.length} rutas`;
+  document.getElementById('listaHeader').textContent = `${keys.length} rutas disponibles`;
+  poblar(keys);
+}
+function poblar(ks) {
+  const el = document.getElementById('listaRutas');
+  el.innerHTML = '';
+  ks.forEach((k, i) => {
+    const ruta = rutasAgrupadas[k];
+    const color = COLORES[i % COLORES.length];
+    const colorRegreso = aclarColor(color);
+    coloresRutas[k] = {color, colorRegreso};
+    const d = document.createElement('div');
+    d.className = 'ruta-item' + (rutaActiva === k ? ' activa' : '');
+    d.id = 'ruta-' + k;
+    const tieneIda = !!ruta.ida;
+    const tieneRegreso = !!ruta.regreso;
+    let lineaHTML = '<div class="ruta-linea">';
+    if (tieneIda) lineaHTML += `<div class="ruta-linea-part" style="background:${color}"></div>`;
+    if (tieneRegreso) lineaHTML += `<div class="ruta-linea-part" style="background:${colorRegreso}"></div>`;
+    lineaHTML += '</div>';
+    const hint = [];
+    if (tieneIda) hint.push('Ida');
+    if (tieneRegreso) hint.push('Regreso');
+    d.innerHTML = `
+      ${lineaHTML}
+      <div>
+        <div class="ruta-num">Ruta ${ruta.numero}</div>
+        <div class="ruta-hint">${hint.join(' / ')}</div>
+      </div>
+    `;
+    d.onclick = () => {
+      verRuta(k);
+    };
+    el.appendChild(d);
+  });
+}
+function verRuta(k, limpiarPuntos = true) {
+  if (limpiarPuntos) {
+    ptOrigen = null;
+    ptDestino = null;
+    modoMarca = null;
+    if(marcadores) marcadores.clearLayers();
+    if(document.getElementById('planResultados')) document.getElementById('planResultados').innerHTML = '';
+    const mp = document.getElementById('sheetMainContent');
+    if(mp) {
+      const bo = mp.querySelector('#btnOrigen');
+      const bd = mp.querySelector('#btnDestino');
+      const pr = mp.querySelector('.plan-resultados');
+      if(bo) { bo.textContent='Punto de partida'; bo.classList.remove('marcado'); }
+      if(bd) { bd.textContent='Punto de llegada'; bd.classList.remove('marcado'); }
+      if(pr) pr.innerHTML = '';
+    }
+    resultadoBuscadoP2P = '';
+  }
+
+  capasActuales.forEach(capa => mapa.removeLayer(capa));
+  capasActuales = [];
+  document.querySelectorAll('.ruta-item').forEach(el => el.classList.remove('activa'));
+  if(document.getElementById('ruta-' + k)) document.getElementById('ruta-' + k).classList.add('activa');
+  rutaActiva = k;
+
+  const ruta = rutasAgrupadas[k];
+  const {color, colorRegreso} = coloresRutas[k];
+  if (ruta.ida) {
+    const geoJsonIda = L.geoJSON(ruta.ida, {
+      style: {color, weight: 5, opacity: 0.9},
+      pointToLayer: (f, ll) => L.circleMarker(ll, {radius: 6, color, weight: 2, fillOpacity: 0.8})
+    }).addTo(mapa);
+    capasActuales.push(geoJsonIda);
+  }
+  if (ruta.regreso) {
+    const geoJsonRegreso = L.geoJSON(ruta.regreso, {
+      style: {color: colorRegreso, weight: 5, opacity: 0.9, dashArray: '5,5'},
+      pointToLayer: (f, ll) => L.circleMarker(ll, {radius: 6, color: colorRegreso, weight: 2, fillOpacity: 0.5})
+    }).addTo(mapa);
+    capasActuales.push(geoJsonRegreso);
+  }
+  if (capasActuales.length > 0) {
+    let bounds = null;
+    capasActuales.forEach(layer => {
+      try {
+        const b = layer.getBounds();
+        if (bounds) bounds.extend(b);
+        else bounds = b;
+      } catch(e) {}
+    });
+    if (bounds && bounds.isValid()) {
+      mapa.fitBounds(bounds, {padding: [50, 50]});
+    }
+  }
+  const popupHTML = `
+    <div style="font-family: Arial; font-size: 13px;">
+      <b>Ruta ${ruta.numero}</b><br>
+      ${ruta.ida ? `<span style="color: ${color}; font-weight: bold;">●</span> Ida` : ''}
+      ${ruta.ida && ruta.regreso ? '<br>' : ''}
+      ${ruta.regreso ? `<span style="color: ${colorRegreso}; font-weight: bold;">●</span> Regreso` : ''}
+    </div>
+  `;
+  if (capasActuales[0]) capasActuales[0].bindPopup(popupHTML).openPopup();
+
+  // ── En móvil: colapsar el sheet para mostrar el mapa ──
+  if (isMobile()) {
+    colapsarSheet(ruta.numero, color);
+    // Forzar redibujado del mapa después de colapsar
+    setTimeout(() => mapa.invalidateSize(), 350);
+  }
+}
+function filtrarRutas(q) {
+  const qn = q.toLowerCase();
+  const f = qn ? Object.keys(rutasAgrupadas).filter(k => 
+    rutasAgrupadas[k].numero.toLowerCase().includes(qn) || k.includes(qn)
+  ) : Object.keys(rutasAgrupadas);
+  poblar(f);
+}
+function mostrarTodas() {
+  rutaActiva = null;
+  document.querySelectorAll('.ruta-item').forEach(el => el.classList.remove('activa'));
+  capasActuales.forEach(capa => mapa.removeLayer(capa));
+  capasActuales = [];
+  ptOrigen = null;
+  ptDestino = null;
+  modoMarca = null;
+  if(marcadores) marcadores.clearLayers();
+  if(document.getElementById('planResultados')) document.getElementById('planResultados').innerHTML = '';
+  const mp = document.getElementById('sheetMainContent');
+  if(mp) {
+    const bo = mp.querySelector('#btnOrigen');
+    const bd = mp.querySelector('#btnDestino');
+    const pr = mp.querySelector('.plan-resultados');
+    if(bo) { bo.textContent='Punto de partida'; bo.classList.remove('marcado'); }
+    if(bd) { bd.textContent='Punto de llegada'; bd.classList.remove('marcado'); }
+    if(pr) pr.innerHTML = '';
+  }
+  resultadoBuscadoP2P = '';
+  mapa.getContainer().style.cursor = '';
+  mapa.setView([14.8979, -92.2519], 13);
+  cerrarPanelMobile();
+}
+function actualizarNumeroDistancia(valor) {
+  if(isMobile()){
+    document.getElementById('sheetMainContent').querySelector('#distanciaNumero').value = valor;
+  } else {
+    document.getElementById('distanciaNumero').value = valor;
+  }
+  DISTANCIA_BUSQUEDA = parseInt(valor,10);
+}
+function actualizarSliderDistancia(valor) {
+  if(isMobile()){
+    document.getElementById('sheetMainContent').querySelector('#distanciaSlider').value = valor;
+  } else {
+    document.getElementById('distanciaSlider').value = valor;
+  }
+  DISTANCIA_BUSQUEDA = parseInt(valor,10);
+}
+function usarGPS(tipo) {
+  if (!navigator.geolocation) {
+    alert('Tu navegador no soporta geolocalización');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const {latitude, longitude} = pos.coords;
+      if (tipo === 'origen') {
+        ptOrigen = {lat: latitude, lng: longitude};
+      } else {
+        ptDestino = {lat: latitude, lng: longitude};
+      }
+      actualizarMarcadores();
+      mostrarPanelPuntoAPunto();
+      mapa.setView([latitude, longitude], 15);
+    },
+    () => alert('No se pudo obtener tu ubicación')
+  );
+}
+function actualizarMarcadores() {
+  if (!marcadores) return;
+  marcadores.clearLayers();
+  if (ptOrigen) {
+    L.circleMarker([ptOrigen.lat, ptOrigen.lng], {
+      radius: 10, color: '#0F9D58', weight: 3, fillColor: 'white', fillOpacity: 1
+    }).addTo(marcadores).bindTooltip('Origen', {permanent: true, offset: [0, 15]});
+  }
+  if (ptDestino) {
+    L.circleMarker([ptDestino.lat, ptDestino.lng], {
+      radius: 10, color: '#1A73E8', weight: 3, fillColor: 'white', fillOpacity: 1
+    }).addTo(marcadores).bindTooltip('Destino', {permanent: true, offset: [0, 15]});
+  }
+}
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+function distanciaASegmento(pLat, pLng, p1Lat, p1Lng, p2Lat, p2Lng) {
+  const dx = p2Lng - p1Lng;
+  const dy = p2Lat - p1Lat;
+  if (dx === 0 && dy === 0) return haversine(pLat, pLng, p1Lat, p1Lng);
+  const t = Math.max(0, Math.min(1, ((pLng - p1Lng) * dx + (pLat - p1Lat) * dy) / (dx * dx + dy * dy)));
+  const proyLat = p1Lat + t * dy;
+  const proyLng = p1Lng + t * dx;
+  return haversine(pLat, pLng, proyLat, proyLng);
+}
+function distanciaALinea(punto, geometry) {
+  if (!geometry) return Infinity;
+  if (geometry.type === 'LineString') {
+    return distanciaALineaCoords(punto, geometry.coordinates);
+  }
+  if (geometry.type === 'MultiLineString') {
+    let min = Infinity;
+    for (let line of geometry.coordinates) {
+      const d = distanciaALineaCoords(punto, line);
+      if (d < min) min = d;
+    }
+    return min;
+  }
+  return Infinity;
+}
+function distanciaALineaCoords(punto, coords) {
+  let distMin = Infinity;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const p1Lat = coords[i][1];
+    const p1Lng = coords[i][0];
+    const p2Lat = coords[i + 1][1];
+    const p2Lng = coords[i + 1][0];
+    const dist = distanciaASegmento(
+      punto.lat, punto.lng,
+      p1Lat, p1Lng,
+      p2Lat, p2Lng
+    );
+    if (dist < distMin) distMin = dist;
+  }
+  return distMin;
+}
+function buscarRutas() {
+  if (!ptOrigen || !ptDestino) {
+    alert('Marca ambos puntos en el mapa primero');
+    return;
+  }
+  const umbral = DISTANCIA_BUSQUEDA;
+  const resultados = [];
+  keys.forEach(k => {
+    const geom = rutasGeometries[k];
+    const ruta = rutasAgrupadas[k];
+    const {color, colorRegreso} = coloresRutas[k];
+    if (geom.ida && (geom.ida.type === 'LineString' || geom.ida.type === 'MultiLineString')) {
+      const distOrigen = distanciaALinea(ptOrigen, geom.ida);
+      const distDestino = distanciaALinea(ptDestino, geom.ida);
+      const distTotal = distOrigen + distDestino;
+      if (distOrigen < umbral && distDestino < umbral) {
+        resultados.push({k, ruta, color, distTotal, tipo: 'Ida'});
+      }
+    }
+    if (geom.regreso && (geom.regreso.type === 'LineString' || geom.regreso.type === 'MultiLineString')) {
+      const distOrigen = distanciaALinea(ptOrigen, geom.regreso);
+      const distDestino = distanciaALinea(ptDestino, geom.regreso);
+      const distTotal = distOrigen + distDestino;
+      if (distOrigen < umbral && distDestino < umbral) {
+        resultados.push({k, ruta, color: colorRegreso, distTotal, tipo: 'Regreso'});
+      }
+    }
+  });
+  resultados.sort((a, b) => a.distTotal - b.distTotal);
+  const html = resultados.slice(0, 5).map(r => `
+    <div class="plan-res-item" data-k="${r.k}">
+      <span style="width:8px;height:8px;border-radius:50%;background:${r.color};flex-shrink:0;"></span>
+      <span class="plan-res-num">Ruta ${r.ruta.numero}</span>
+      <span style="font-size:10px;color:var(--texto2);">${r.tipo} - ${(r.distTotal/2).toFixed(0)}m</span>
+    </div>
+  `).join('');
+  resultadoBuscadoP2P = html;
+  if(isMobile()){
+    const resCont = document.getElementById('sheetMainContent').querySelector('.plan-resultados');
+    resCont.innerHTML = html || '<div style="padding:10px;color:#D93025;">No se encontraron rutas cercanas</div>';
+    resCont.querySelectorAll('.plan-res-item').forEach(item => {
+      item.onclick = function() {
+        const k = this.getAttribute('data-k');
+        verRuta(k, false);
+      };
+    });
+  } else {
+    document.getElementById('planResultados').innerHTML = html || '<div style="padding:10px;color:#D93025;">No se encontraron rutas cercanas</div>';
+    document.querySelectorAll('.plan-res-item').forEach(item => {
+      item.onclick = function() {
+        const k = this.getAttribute('data-k');
+        verRuta(k, false);
+      };
+    });
+  }
+}
+function limpiarPlan() {
+  ptOrigen = null;
+  ptDestino = null;
+  modoMarca = null;
+  resultadoBuscadoP2P = '';
+  let bo = document.getElementById('btnOrigen');
+  if (bo) { bo.textContent = 'Punto de partida'; bo.classList.remove('marcado'); }
+  let bd = document.getElementById('btnDestino');
+  if (bd) { bd.textContent = 'Punto de llegada'; bd.classList.remove('marcado'); }
+  let pr = document.getElementById('planResultados');
+  if (pr) pr.innerHTML = '';
+  let bmo = document.getElementById('sheetMainContent')?.querySelector('#btnOrigen');
+  if (bmo) { bmo.textContent = 'Punto de partida'; bmo.classList.remove('marcado'); }
+  let bmd = document.getElementById('sheetMainContent')?.querySelector('#btnDestino');
+  if (bmd) { bmd.textContent = 'Punto de llegada'; bmd.classList.remove('marcado'); }
+  let pr2 = document.getElementById('sheetMainContent')?.querySelector('.plan-resultados');
+  if (pr2) pr2.innerHTML = '';
+  if(marcadores) marcadores.clearLayers();
+  mapa.getContainer().style.cursor = '';
+  cerrarPaneles();
+}
+iniciarMarca = function(tipo) {
+  modoMarca = tipo;
+  mapa.getContainer().style.cursor = 'crosshair';
+};
+onMapClick = function(e) {
+  if (!modoMarca) return;
+  const {lat, lng} = e.latlng;
+  function setOrigenText(text, addClass) {
+    let bo = document.getElementById('btnOrigen');
+    if (bo) { bo.textContent = text; addClass ? bo.classList.add('marcado') : bo.classList.remove('marcado'); }
+    let bmo = document.getElementById('sheetMainContent')?.querySelector('#btnOrigen');
+    if (bmo) { bmo.textContent = text; addClass ? bmo.classList.add('marcado') : bmo.classList.remove('marcado'); }
+  }
+  function setDestinoText(text, addClass) {
+    let bd = document.getElementById('btnDestino');
+    if (bd) { bd.textContent = text; addClass ? bd.classList.add('marcado') : bd.classList.remove('marcado'); }
+    let bmd = document.getElementById('sheetMainContent')?.querySelector('#btnDestino');
+    if (bmd) { bmd.textContent = text; addClass ? bmd.classList.add('marcado') : bmd.classList.remove('marcado'); }
+  }
+  if (modoMarca === 'origen') {
+    ptOrigen = {lat, lng};
+    setOrigenText(`✅ ${lat.toFixed(4)}, ${lng.toFixed(4)}`, true);
+    actualizarMarcadores();
+    modoMarca = null; 
+    mapa.getContainer().style.cursor = '';
+    setTimeout(() => { mostrarPanelPuntoAPunto(); }, 250);
+  } 
+  else if (modoMarca === 'destino') {
+    ptDestino = {lat, lng};
+    setDestinoText(`✅ ${lat.toFixed(4)}, ${lng.toFixed(4)}`, true);
+    actualizarMarcadores();
+    modoMarca = null; 
+    mapa.getContainer().style.cursor = '';
+    setTimeout(() => {
+      mostrarPanelPuntoAPunto();
+      if(isMobile()){
+        document.getElementById('sheetMainContent').querySelector('#btnBuscarRutas')?.focus();
+      }else{
+        document.getElementById('panelPlan').scrollIntoView({behavior:'smooth'});
+        document.getElementById('btnBuscarRutas')?.focus();
+      }
+    }, 350);
+  }
+};
+</script>
+</body>
+</html>
